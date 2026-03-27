@@ -6,18 +6,18 @@ on:
 
 jobs:
   # 1. 编译安卓版
-  build-android:
+    build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: "zulu"
-          java-version: "17"
+          java-version: "21"
           cache: "gradle"
 
       - name: Setup Flutter
@@ -26,15 +26,22 @@ jobs:
           flutter-version: "3.38.x"
           cache: true
 
-      # 自动生成临时签名
-      - name: Generate dummy keystore
+      # 从 GitHub Secrets 中读取并还原你的永久签名文件
+      - name: Download Android keystore
+        id: android_keystore
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: keystore.jks
+          encodedString: ${{ secrets.KEYSTORE_BASE64 }}
+
+      # 创建 key.properties 配置文件，让打包工具知道密码是什么
+      - name: Create key.properties
         run: |
-          cd simple_live_app/android
-          keytool -genkey -v -keystore keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias -dname "CN=test, OU=test, O=test, L=test, S=test, C=test" -storepass 123456 -keypass 123456
-          echo "storeFile=keystore.jks" > key.properties
-          echo "storePassword=123456" >> key.properties
-          echo "keyPassword=123456" >> key.properties
-          echo "keyAlias=my-alias" >> key.properties
+          mkdir -p simple_live_app/android/app
+          echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > simple_live_app/android/key.properties
+          echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> simple_live_app/android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> simple_live_app/android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> simple_live_app/android/key.properties
 
       - name: Restore packages
         run: |
@@ -51,7 +58,7 @@ jobs:
         with:
           name: Android-APK
           path: simple_live_app/build/app/outputs/flutter-apk/app-release.apk
-
+          
   # 2. 编译 Windows 版
   build-windows:
     name: Build Windows App
