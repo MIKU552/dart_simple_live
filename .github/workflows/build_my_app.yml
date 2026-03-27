@@ -6,7 +6,7 @@ on:
 
 jobs:
   # 1. 编译安卓版
-    build-android:
+  build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
@@ -59,8 +59,8 @@ jobs:
           name: Android-APK
           path: simple_live_app/build/app/outputs/flutter-apk/app-release.apk
           
-    # 2. 编译 Windows 版
-    build-windows:
+  # 2. 编译 Windows 版
+  build-windows:
     name: Build Windows App
     runs-on: windows-latest
     steps:
